@@ -8,9 +8,7 @@ ARG GITHUB_PASS
 
 COPY go.mod go.sum /go/app/
 WORKDIR /go/app
-RUN echo "machine github.com\n\tlogin $GITHUB_USER\n\tpassword $GITHUB_PASS" >> ~/.netrc \
- && go mod download \
- && rm -f ~/.netrc
+RUN go mod download
 
 COPY . /go/app
 RUN CGO_ENABLED=0 go build .
@@ -23,9 +21,9 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.3.0 \
  && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
  && chmod +x /bin/grpc_health_probe
 
-COPY --from=builder /go/app/app /app/citadel
+COPY --from=builder /go/app/app /app/app
 
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
-CMD ["./citadel"]
+CMD ["./app"]
