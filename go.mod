@@ -12,6 +12,7 @@ require (
 	github.com/google/uuid v0.0.0-20171129191014-dec09d789f3d
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
+	github.com/guregu/null v4.0.0+incompatible
 	github.com/lib/pq v0.0.0-20180523175426-90697d60dd84
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.5.0

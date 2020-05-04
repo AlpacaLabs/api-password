@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AlpacaLabs/password-reset/internal/db/entities"
+
 	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
 	"github.com/golang-sql/sqlexp"
 	"go.opentelemetry.io/otel/api/global"
@@ -33,14 +35,16 @@ type txImpl struct {
 	tx *sql.Tx
 }
 
-func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, c authV1.PasswordResetCode) error {
+func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, in authV1.PasswordResetCode) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
+	c := entities.NewPasswordResetCodeFromPB(in)
+
 	_, err := q.ExecContext(
-		context.TODO(),
+		ctx,
 		"INSERT INTO password_reset_code(code, expiration_timestamp, stale, used, account_id) VALUES($1, $2, $3, $4, $5)",
-		c.Code, c.ExpiresAt.Seconds, c.Stale, c.Used, c.AccountId)
+		c.Code, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
 
 	return err
 }
