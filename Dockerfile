@@ -16,6 +16,7 @@ WORKDIR /go/app
 ARG SSH_PRIVATE_KEY
 RUN mkdir /root/.ssh/ && \
     echo "${SSH_PRIVATE_KEY}" > /root/.ssh/id_rsa && \
+    chmod 600 /root/.ssh/id_rsa && \
     touch /root/.ssh/known_hosts && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts && \
     git config --global url.git@github.com:.insteadOf https://github.com/ && \
