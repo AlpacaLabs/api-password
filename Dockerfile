@@ -33,7 +33,8 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.3.0 \
 
 COPY --from=builder /go/app/app /app/app
 
-RUN apk add --no-cache ca-certificates
+# RUN apk add --no-cache ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates
 
 WORKDIR /app
 CMD ["./app"]
