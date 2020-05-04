@@ -23,7 +23,7 @@ RUN mkdir /root/.ssh/ && \
     go mod download
 
 COPY . /go/app
-RUN CGO_ENABLED=0 go build .
+RUN CGO_ENABLED=0 go build . && echo hahahahahahahahahahhaahha && pwd && ls -la
 
 WORKDIR /go/app
 
