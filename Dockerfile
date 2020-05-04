@@ -23,8 +23,7 @@ RUN mkdir /root/.ssh/ && \
     go mod download
 
 COPY . /go/app
-RUN CGO_ENABLED=0 go build -o app . && echo hahahahahahahahahahhaahha && pwd && ls -la
-
+RUN CGO_ENABLED=0 go build -o app .
 
 FROM alpine:latest as app
 
