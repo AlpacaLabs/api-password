@@ -62,7 +62,7 @@ func LoadConfig() Config {
 		DBUser:     "postgres",
 		DBPass:     "postgres",
 	}
-	c.DBHost = fmt.Sprintf("%s-db", c.DBName)
+	c.DBHost = fmt.Sprintf("%s-db", c.AppName)
 
 	flag.String(flagForDBUser, c.DBUser, "DB user")
 	flag.String(flagForDBPass, c.DBPass, "DB pass")
