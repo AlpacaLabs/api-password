@@ -4,11 +4,11 @@ import (
 	"sync"
 
 	"github.com/AlpacaLabs/password-reset/internal/app"
-	"github.com/AlpacaLabs/password-reset/internal/config"
+	"github.com/AlpacaLabs/password-reset/internal/configuration"
 )
 
 func main() {
-	c := config.LoadConfig()
+	c := configuration.LoadConfig()
 	a := app.NewApp(c)
 
 	var wg sync.WaitGroup

@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/xid"
 
-	"github.com/AlpacaLabs/password-reset/internal/config"
+	"github.com/AlpacaLabs/password-reset/internal/configuration"
 	"github.com/AlpacaLabs/password-reset/internal/db"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -20,7 +20,7 @@ import (
 var dbConn *sql.DB
 
 func TestMain(m *testing.M) {
-	c := config.LoadConfig()
+	c := configuration.LoadConfig()
 	dbConn = db.Connect(c.DBUser, c.DBPass, c.DBHost, c.DBName)
 
 	code := m.Run()

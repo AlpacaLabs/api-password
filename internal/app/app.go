@@ -3,7 +3,7 @@ package app
 import (
 	"sync"
 
-	"github.com/AlpacaLabs/password-reset/internal/config"
+	"github.com/AlpacaLabs/password-reset/internal/configuration"
 	"github.com/AlpacaLabs/password-reset/internal/db"
 	"github.com/AlpacaLabs/password-reset/internal/http"
 	"github.com/AlpacaLabs/password-reset/internal/services"
@@ -11,10 +11,10 @@ import (
 )
 
 type App struct {
-	config config.Config
+	config configuration.Config
 }
 
-func NewApp(c config.Config) App {
+func NewApp(c configuration.Config) App {
 	return App{
 		config: c,
 	}
