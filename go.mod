@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/lib/pq v0.0.0-20180523175426-90697d60dd84
+	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.5.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/pflag v1.0.5

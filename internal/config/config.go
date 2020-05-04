@@ -53,12 +53,16 @@ func (c Config) String() string {
 
 func LoadConfig() Config {
 	c := Config{
-		AppName:    "citadel",
+		AppName:    "password-reset",
 		AppID:      uuid.New().String(),
 		GrpcPort:   8081,
 		HealthPort: 8082,
 		HTTPPort:   8083,
+		DBName:     "postgres",
+		DBUser:     "postgres",
+		DBPass:     "postgres",
 	}
+	c.DBHost = fmt.Sprintf("%s-db", c.DBName)
 
 	flag.String(flagForDBUser, c.DBUser, "DB user")
 	flag.String(flagForDBPass, c.DBPass, "DB pass")
