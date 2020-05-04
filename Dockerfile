@@ -25,7 +25,7 @@ RUN mkdir /root/.ssh/ && \
 COPY . /go/app
 RUN CGO_ENABLED=0 go build -o app .
 
-FROM alpine:latest as app
+FROM golang:1.13 as app
 
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.0 \
  && wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
