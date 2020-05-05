@@ -5,17 +5,17 @@ import (
 	"net/http"
 
 	"github.com/AlpacaLabs/password-reset/internal/configuration"
-	"github.com/AlpacaLabs/password-reset/internal/services"
+	"github.com/AlpacaLabs/password-reset/internal/service"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
 type Server struct {
 	config  configuration.Config
-	service services.Service
+	service service.Service
 }
 
-func NewServer(config configuration.Config, service services.Service) Server {
+func NewServer(config configuration.Config, service service.Service) Server {
 	return Server{
 		config:  config,
 		service: service,

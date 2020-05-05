@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"github.com/AlpacaLabs/password-reset/internal/configuration"
