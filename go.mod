@@ -1,4 +1,4 @@
-module github.com/AlpacaLabs/password-reset
+module github.com/AlpacaLabs/api-password-reset
 
 go 1.14
 

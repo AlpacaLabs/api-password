@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AlpacaLabs/password-reset/internal/db/entities"
+	"github.com/AlpacaLabs/api-password-reset/internal/db/entities"
 
 	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
 	"github.com/golang-sql/sqlexp"

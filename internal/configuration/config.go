@@ -53,7 +53,7 @@ func (c Config) String() string {
 
 func LoadConfig() Config {
 	c := Config{
-		AppName:    "password-reset",
+		AppName:    "api-password-reset",
 		AppID:      uuid.New().String(),
 		GrpcPort:   8081,
 		HealthPort: 8082,

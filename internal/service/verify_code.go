@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/AlpacaLabs/password-reset/internal/db"
+	"github.com/AlpacaLabs/api-password-reset/internal/db"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )

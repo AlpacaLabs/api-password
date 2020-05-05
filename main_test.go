@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/xid"
 
-	"github.com/AlpacaLabs/password-reset/internal/configuration"
-	"github.com/AlpacaLabs/password-reset/internal/db"
+	"github.com/AlpacaLabs/api-password-reset/internal/configuration"
+	"github.com/AlpacaLabs/api-password-reset/internal/db"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -3,10 +3,10 @@ package app
 import (
 	"sync"
 
-	"github.com/AlpacaLabs/password-reset/internal/configuration"
-	"github.com/AlpacaLabs/password-reset/internal/db"
-	"github.com/AlpacaLabs/password-reset/internal/http"
-	"github.com/AlpacaLabs/password-reset/internal/service"
+	"github.com/AlpacaLabs/api-password-reset/internal/configuration"
+	"github.com/AlpacaLabs/api-password-reset/internal/db"
+	"github.com/AlpacaLabs/api-password-reset/internal/http"
+	"github.com/AlpacaLabs/api-password-reset/internal/service"
 	_ "github.com/lib/pq"
 )
 
