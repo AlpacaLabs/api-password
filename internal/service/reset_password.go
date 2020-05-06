@@ -46,10 +46,12 @@ func (s *Service) ResetPassword(ctx context.Context, p authV1.ResetPasswordReque
 			return nil
 		}
 
-		accountID, err := tx.GetAccountIDForEmailAddress(ctx, p.EmailAddress)
+		account, err := s.getAccountForEmailAddress(ctx, p.EmailAddress)
 		if err != nil {
 			return err
 		}
+
+		accountID := account.Id
 
 		// TODO hit auth service w/ account_id and new_password to reset password
 

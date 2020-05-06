@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	accountV1 "github.com/AlpacaLabs/protorepo-account-go/alpacalabs/account/v1"
+	"google.golang.org/grpc"
+
 	"github.com/AlpacaLabs/api-password/internal/db"
 	clock "github.com/AlpacaLabs/go-timestamp"
 	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
@@ -20,20 +23,22 @@ var (
 	ErrEmptyUserIdentifier = errors.New("user identifier cannot be empty; must be email, phone number, or username")
 )
 
-func (s Service) SendCodeOptions(ctx context.Context, request authV1.GetCodeOptionsRequest) (response *authV1.GetCodeOptionsResponse, err error) {
-	err = s.dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
+func (s Service) SendCodeOptions(ctx context.Context, request authV1.GetCodeOptionsRequest) (*authV1.GetCodeOptionsResponse, error) {
+	var response *authV1.GetCodeOptionsResponse
+	if err := s.dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
 		accountIdentifier := strings.TrimSpace(request.UserIdentifier)
 		if accountIdentifier == "" {
 			return ErrEmptyUserIdentifier
 		}
 
-		var accountID string
-		if accountID, err = getAccountIdForAccount(ctx, tx, accountIdentifier); err != nil || accountID == "" {
-			// We deliberately do not leak if email is not found
-			return nil
+		account, err := s.getAccount(ctx, accountIdentifier)
+		if err != nil {
+			return err
 		}
 
-		if r, err := getSendOptions(ctx, accountID, tx); err != nil {
+		accountID := account.Id
+
+		if r, err := getSendOptions(ctx, account); err != nil {
 			// We deliberately do not leak if email is not found
 			return nil
 		} else {
@@ -55,8 +60,7 @@ func (s Service) SendCodeOptions(ctx context.Context, request authV1.GetCodeOpti
 		}
 
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -89,32 +93,42 @@ func numOptions(in *authV1.CodeOptions) int {
 	return num
 }
 
-func getSendOptions(ctx context.Context, accountID string, tx db.Transaction) (*authV1.GetCodeOptionsResponse, error) {
+func getSendOptions(ctx context.Context, account *accountV1.Account) (*authV1.GetCodeOptionsResponse, error) {
 	res := &authV1.GetCodeOptionsResponse{
 		CodeOptions: &authV1.CodeOptions{},
 	}
 
-	if phoneNumbers, err := tx.GetPhoneNumbersForAccount(ctx, accountID); err != nil {
-		return nil, err
-	} else {
-		res.CodeOptions.PhoneNumbers = phoneNumbers
-		// Mask each phone number (only show last two digits)
-		for _, p := range res.CodeOptions.PhoneNumbers {
-			p.PhoneNumber = p.PhoneNumber[len(p.PhoneNumber)-2:]
-		}
+	var phoneNumbers []*authV1.PhoneNumber
+	for _, p := range account.PhoneNumbers {
+		phoneNumbers = append(phoneNumbers, &authV1.PhoneNumber{
+			Id:        p.Id,
+			CreatedAt: p.CreatedAt,
+			AccountId: p.AccountId,
+			// Mask each phone number (only show last two digits)
+			PhoneNumber: maskPhoneNumber(p.PhoneNumber),
+		})
 	}
 
-	if emailAddresses, err := tx.GetConfirmedEmailAddressesForAccountID(ctx, accountID); err != nil {
-		return nil, err
-	} else {
-		res.CodeOptions.EmailAddresses = emailAddresses
-		// Mask each email address
-		for _, e := range res.CodeOptions.EmailAddresses {
-			e.EmailAddress = maskEmailAddress(e.EmailAddress)
-		}
+	var emailAddresses []*authV1.EmailAddress
+	for _, e := range account.EmailAddresses {
+		emailAddresses = append(emailAddresses, &authV1.EmailAddress{
+			Id:             e.Id,
+			CreatedAt:      e.CreatedAt,
+			LastModifiedAt: e.LastModifiedAt,
+			Deleted:        e.Deleted,
+			DeletedAt:      e.DeletedAt,
+			Confirmed:      e.Confirmed,
+			Primary:        e.Primary,
+			EmailAddress:   maskEmailAddress(e.EmailAddress),
+			AccountId:      e.AccountId,
+		})
 	}
 
 	return res, nil
+}
+
+func maskPhoneNumber(phoneNumber string) string {
+	return phoneNumber[len(phoneNumber)-2:]
 }
 
 func maskEmailAddress(emailAddress string) string {
@@ -138,23 +152,6 @@ func getMaskedEmailHost(emailAddress string) string {
 	return strings.Join(splits, ".")
 }
 
-func getAccountIdForAccount(ctx context.Context, tx db.Transaction, accountIdentifier string) (string, error) {
-	if isEmailAddress(accountIdentifier) {
-		if err := checkmail.ValidateFormat(accountIdentifier); err != nil {
-			return "", fmt.Errorf("email address has invalid format: %s", accountIdentifier)
-		}
-		return tx.GetAccountIDForEmailAddress(ctx, accountIdentifier)
-	} else if isPhoneNumber(accountIdentifier) {
-		phoneNumber, err := tx.GetPhoneNumber(ctx, accountIdentifier)
-		if err != nil {
-			return "", err
-		}
-		return phoneNumber.AccountId, nil
-	} else {
-		return tx.GetAccountIDForUsername(ctx, accountIdentifier)
-	}
-}
-
 func isEmailAddress(s string) bool {
 	return strings.Contains(s, "@")
 }
@@ -162,4 +159,68 @@ func isEmailAddress(s string) bool {
 func isPhoneNumber(s string) bool {
 	_, err := libphonenumber.Parse(s, "US")
 	return err == nil
+}
+
+func (s *Service) getAccount(ctx context.Context, accountIdentifier string) (*accountV1.Account, error) {
+	request, err := accountIdentifierToGetAccountRequest(accountIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	// Dial Account service
+	conn, err := grpc.Dial(s.config.AccountGRPCAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	client := accountV1.NewAccountServiceClient(conn)
+
+	res, err := client.GetAccount(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Account, nil
+}
+
+func accountIdentifierToGetAccountRequest(accountIdentifier string) (*accountV1.GetAccountRequest, error) {
+	if isEmailAddress(accountIdentifier) {
+		if err := checkmail.ValidateFormat(accountIdentifier); err != nil {
+			return nil, fmt.Errorf("email address has invalid format: %s", accountIdentifier)
+		}
+		return &accountV1.GetAccountRequest{
+			AccountIdentifier: &accountV1.GetAccountRequest_EmailAddress{
+				EmailAddress: accountIdentifier,
+			},
+		}, nil
+	} else if isPhoneNumber(accountIdentifier) {
+		return &accountV1.GetAccountRequest{
+			AccountIdentifier: &accountV1.GetAccountRequest_PhoneNumber{
+				PhoneNumber: accountIdentifier,
+			},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("invalid account identifier: %s", accountIdentifier)
+}
+
+func (s *Service) getAccountForEmailAddress(ctx context.Context, emailAddress string) (*accountV1.Account, error) {
+	// Dial Account service
+	conn, err := grpc.Dial(s.config.AccountGRPCAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	client := accountV1.NewAccountServiceClient(conn)
+
+	res, err := client.GetAccount(ctx, &accountV1.GetAccountRequest{
+		AccountIdentifier: &accountV1.GetAccountRequest_EmailAddress{
+			EmailAddress: emailAddress,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Account, nil
 }

@@ -19,6 +19,10 @@ const (
 	flagForGrpcPort       = "grpc_port"
 	flagForGrpcPortHealth = "grpc_port_health"
 	flagForHTTPPort       = "http_port"
+
+	flagForAccountGrpcAddress = "account_service_address"
+	flagForAccountGrpcHost    = "account_service_host"
+	flagForAccountGrpcPort    = "account_service_port_grpc"
 )
 
 type Config struct {
@@ -41,6 +45,9 @@ type Config struct {
 
 	// HealthPort controls what port our gRPC health endpoints run on.
 	HealthPort int
+
+	// AccountGRPCAddress is the gRPC address of the Account service.
+	AccountGRPCAddress string
 }
 
 func (c Config) String() string {
@@ -73,6 +80,10 @@ func LoadConfig() Config {
 	flag.Int(flagForGrpcPortHealth, c.HealthPort, "gRPC health port")
 	flag.Int(flagForHTTPPort, c.HTTPPort, "gRPC HTTP port")
 
+	flag.String(flagForAccountGrpcAddress, "", "Address of Account gRPC service")
+	flag.String(flagForAccountGrpcHost, "", "Host of Account gRPC service")
+	flag.String(flagForAccountGrpcPort, "", "Port of Account gRPC service")
+
 	flag.Parse()
 
 	viper.BindPFlag(flagForDBUser, flag.Lookup(flagForDBUser))
@@ -84,6 +95,10 @@ func LoadConfig() Config {
 	viper.BindPFlag(flagForGrpcPortHealth, flag.Lookup(flagForGrpcPortHealth))
 	viper.BindPFlag(flagForHTTPPort, flag.Lookup(flagForHTTPPort))
 
+	viper.BindPFlag(flagForAccountGrpcAddress, flag.Lookup(flagForAccountGrpcAddress))
+	viper.BindPFlag(flagForAccountGrpcHost, flag.Lookup(flagForAccountGrpcHost))
+	viper.BindPFlag(flagForAccountGrpcPort, flag.Lookup(flagForAccountGrpcPort))
+
 	viper.AutomaticEnv()
 
 	c.DBUser = viper.GetString(flagForDBUser)
@@ -94,6 +109,8 @@ func LoadConfig() Config {
 	c.GrpcPort = viper.GetInt(flagForGrpcPort)
 	c.HealthPort = viper.GetInt(flagForGrpcPortHealth)
 	c.HTTPPort = viper.GetInt(flagForHTTPPort)
+
+	c.AccountGRPCAddress = getGrpcAddress(flagForAccountGrpcAddress, flagForAccountGrpcHost, flagForAccountGrpcPort)
 
 	return c
 }
