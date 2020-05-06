@@ -3,8 +3,8 @@ package main
 import (
 	"sync"
 
-	"github.com/AlpacaLabs/api-password-reset/internal/app"
-	"github.com/AlpacaLabs/api-password-reset/internal/configuration"
+	"github.com/AlpacaLabs/api-password/internal/app"
+	"github.com/AlpacaLabs/api-password/internal/configuration"
 )
 
 func main() {

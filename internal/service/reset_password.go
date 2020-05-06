@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlpacaLabs/api-password-reset/internal/db"
+	"github.com/AlpacaLabs/api-password/internal/db"
 	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
 	"github.com/badoux/checkmail"
 	"github.com/google/uuid"

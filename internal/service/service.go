@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/AlpacaLabs/api-password-reset/internal/configuration"
-	"github.com/AlpacaLabs/api-password-reset/internal/db"
+	"github.com/AlpacaLabs/api-password/internal/configuration"
+	"github.com/AlpacaLabs/api-password/internal/db"
 	"google.golang.org/grpc"
 )
 
