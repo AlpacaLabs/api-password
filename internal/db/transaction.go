@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
 	"time"
 
 	"github.com/AlpacaLabs/api-password/internal/db/entities"
@@ -21,7 +20,7 @@ type Transaction interface {
 
 	GetPasswordForAccountID(ctx context.Context, id string) (*passwordV1.Password, error)
 	CreatePassword(ctx context.Context, p passwordV1.Password) error
-	UpdatePassword(ctx context.Context, p passwordV1.Password) error
+	UpdateCurrentPassword(ctx context.Context, accountID, passwordID string) error
 }
 
 type txImpl struct {
@@ -34,10 +33,12 @@ func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, in authV1.Passwor
 
 	c := entities.NewPasswordResetCodeFromPB(in)
 
-	_, err := q.ExecContext(
-		ctx,
-		"INSERT INTO password_reset_code(code, expiration_timestamp, stale, used, account_id) VALUES($1, $2, $3, $4, $5)",
-		c.Code, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
+	query := `
+INSERT INTO password_reset_code(code, expiration_timestamp, stale, used, account_id) 
+ VALUES($1, $2, $3, $4, $5)
+`
+
+	_, err := q.ExecContext(ctx, query, c.Code, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
 
 	return err
 }
@@ -46,15 +47,17 @@ func (tx *txImpl) CodeIsValid(ctx context.Context, code string) (bool, error) {
 	var q sqlexp.Querier
 	q = tx.tx
 
+	query := `
+SELECT COUNT(*) AS count 
+ FROM password_reset_code
+ WHERE code = $1
+ AND stale = FALSE
+ AND used = FALSE
+ AND expiration_timestamp > $2
+`
+
 	var count int
-	row := q.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) AS count "+
-			"FROM password_reset_code "+
-			"WHERE code = $1 "+
-			"AND stale = FALSE "+
-			"AND used = FALSE "+
-			"AND expiration_timestamp > $2", code, time.Now())
+	row := q.QueryRowContext(ctx, query, code, time.Now())
 
 	err := row.Scan(&count)
 	if err != nil {
@@ -68,10 +71,13 @@ func (tx *txImpl) MarkAsUsed(ctx context.Context, code string) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
-	_, err := q.ExecContext(
-		ctx,
-		"UPDATE password_reset_code SET used=TRUE, stale=TRUE WHERE code=$1",
-		code)
+	query := `
+UPDATE password_reset_code 
+ SET used=TRUE, stale=TRUE 
+ WHERE code=$1
+`
+
+	_, err := q.ExecContext(ctx, query, code)
 	return err
 }
 
@@ -79,10 +85,13 @@ func (tx *txImpl) MarkAllAsStale(ctx context.Context, accountID string) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
-	_, err := q.ExecContext(
-		ctx,
-		"UPDATE password_reset_code SET stale=TRUE WHERE account_id=$1",
-		accountID)
+	query := `
+UPDATE password_reset_code 
+ SET stale=TRUE 
+ WHERE account_id=$1
+`
+
+	_, err := q.ExecContext(ctx, query, accountID)
 	return err
 }
 
@@ -90,13 +99,14 @@ func (tx *txImpl) GetPasswordForAccountID(ctx context.Context, id string) (*pass
 	var q sqlexp.Querier
 	q = tx.tx
 
+	query := `
+SELECT id, created_timestamp, iteration_count, salt, password_hash, account_id
+ FROM password
+ WHERE id=$1
+`
+
 	var p entities.Password
-	row := q.QueryRowContext(
-		ctx,
-		"SELECT p.id, p.created_timestamp, p.iteration_count, p.salt, "+
-			"p.password_hash, p.account_id "+
-			"FROM Password p "+
-			"WHERE p.id=$1", id)
+	row := q.QueryRowContext(ctx, query, id)
 	err := row.Scan(&p.Id, &p.Created, &p.IterationCount, &p.Salt, &p.PasswordHash, &p.AccountID)
 
 	if err != nil {
@@ -110,28 +120,29 @@ func (tx *txImpl) CreatePassword(ctx context.Context, in passwordV1.Password) er
 	var q sqlexp.Querier
 	q = tx.tx
 
+	query := `
+INSERT INTO password(id, created_timestamp, iteration_count, salt, password_hash, account_id) 
+ VALUES($1, $2, $3, $4, $5, $6)
+`
+
 	p := entities.NewPasswordFromProtobuf(in)
 
-	_, err := q.ExecContext(
-		ctx,
-		"INSERT INTO Password(id, created_timestamp, iteration_count, salt, password_hash, account_id) VALUES($1, $2, $3, $4, $5, $6)",
-		p.Id, p.Created, p.IterationCount, p.Salt, p.PasswordHash, p.AccountID)
+	_, err := q.ExecContext(ctx, query, p.Id, p.Created, p.IterationCount, p.Salt, p.PasswordHash, p.AccountID)
 
 	return err
 }
 
-func (tx *txImpl) UpdatePassword(ctx context.Context, in passwordV1.Password) error {
+func (tx *txImpl) UpdateCurrentPassword(ctx context.Context, accountID, passwordID string) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
-	p := entities.NewPasswordFromProtobuf(in)
+	query := `
+UPDATE account 
+ SET current_password_id=$1, 
+ WHERE id=$2
+`
 
-	_, err := q.ExecContext(
-		ctx,
-		"UPDATE Password SET iteration_count=$1, salt=decode($2, 'hex'), password_hash=decode($3, 'hex') WHERE id=$4",
-		p.IterationCount,
-		hex.EncodeToString(p.Salt),
-		hex.EncodeToString(p.PasswordHash),
-		p.Id)
+	_, err := q.ExecContext(ctx, query, passwordID, accountID)
+
 	return err
 }
