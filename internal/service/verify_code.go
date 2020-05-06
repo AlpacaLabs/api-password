@@ -18,7 +18,7 @@ var (
 	ErrEmptyPassword = errors.New("password cannot be empty")
 )
 
-func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeRequest) error {
+func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeRequest) (*passwordV1.VerifyCodeResponse, error) {
 	err := s.dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
 		if strings.TrimSpace(request.NewPassword) == "" {
 			return ErrEmptyPassword
@@ -69,8 +69,8 @@ func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeR
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &passwordV1.VerifyCodeResponse{}, nil
 }

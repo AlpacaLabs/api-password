@@ -19,7 +19,7 @@ type Transaction interface {
 
 	CreateTxobForCode(ctx context.Context, codeID string) error
 
-	GetPasswordForAccountID(ctx context.Context, id string) (*passwordV1.Password, error)
+	GetCurrentPasswordForAccountID(ctx context.Context, accountID string) (*passwordV1.Password, error)
 	CreatePassword(ctx context.Context, p passwordV1.Password) error
 	UpdateCurrentPassword(ctx context.Context, accountID, passwordID string) error
 }
@@ -111,19 +111,21 @@ INSERT INTO password_reset_code_txob(code_id, sent)
 	return err
 }
 
-func (tx *txImpl) GetPasswordForAccountID(ctx context.Context, id string) (*passwordV1.Password, error) {
+func (tx *txImpl) GetCurrentPasswordForAccountID(ctx context.Context, accountID string) (*passwordV1.Password, error) {
 	var q sqlexp.Querier
 	q = tx.tx
 
 	query := `
-SELECT id, created_timestamp, iteration_count, salt, password_hash, account_id
- FROM password
- WHERE id=$1
+SELECT p.id, p.created_timestamp, p.iteration_count, p.salt, p.password_hash, p.account_id
+ FROM password p
+ JOIN account a
+ ON a.id = p.account_id
+ WHERE a.id=$1
 `
 
 	var p entities.Password
-	row := q.QueryRowContext(ctx, query, id)
-	err := row.Scan(&p.Id, &p.Created, &p.IterationCount, &p.Salt, &p.PasswordHash, &p.AccountID)
+	row := q.QueryRowContext(ctx, query, accountID)
+	err := row.Scan(&p.ID, &p.CreatedAt, &p.IterationCount, &p.Salt, &p.Hash, &p.AccountID)
 
 	if err != nil {
 		return nil, err
@@ -143,7 +145,7 @@ INSERT INTO password(id, created_timestamp, iteration_count, salt, password_hash
 
 	p := entities.NewPasswordFromProtobuf(in)
 
-	_, err := q.ExecContext(ctx, query, p.Id, p.Created, p.IterationCount, p.Salt, p.PasswordHash, p.AccountID)
+	_, err := q.ExecContext(ctx, query, p.ID, p.CreatedAt, p.IterationCount, p.Salt, p.Hash, p.AccountID)
 
 	return err
 }

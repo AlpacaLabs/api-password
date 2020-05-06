@@ -4,7 +4,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/AlpacaLabs/api-password/internal/db/entities"
+	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
+
 	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,7 +42,7 @@ func TestHash(t *testing.T) {
 		Convey("Hashes should match", func() {
 			for _, test := range tests {
 				hash := generateHash(test.password, test.iterationCount, test.salt)
-				match := matchesHash(test.password, &entities.Password{IterationCount: test.iterationCount, Salt: test.salt, PasswordHash: hash})
+				match := matchesHash(test.password, &passwordV1.Password{IterationCount: int32(test.iterationCount), Salt: test.salt, Hash: hash})
 				So(match, ShouldBeTrue)
 			}
 		})

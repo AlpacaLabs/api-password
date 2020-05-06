@@ -7,14 +7,15 @@ import (
 	"io"
 	"time"
 
-	"github.com/AlpacaLabs/api-password/internal/db/entities"
+	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
+
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func matchesHash(passwordText string, password *entities.Password) bool {
-	hash := generateHash(passwordText, password.IterationCount, password.Salt)
-	return hex.EncodeToString(password.PasswordHash) == hex.EncodeToString(hash)
+func matchesHash(passwordText string, password *passwordV1.Password) bool {
+	hash := generateHash(passwordText, int(password.IterationCount), password.Salt)
+	return hex.EncodeToString(password.Hash) == hex.EncodeToString(hash)
 }
 
 func generateHash(passwordText string, iterationCount int, salt []byte) []byte {
