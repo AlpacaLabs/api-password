@@ -9,7 +9,7 @@ import (
 
 func (s Service) DeliverCode(ctx context.Context, request passwordV1.DeliverCodeRequest) (*passwordV1.DeliverCodeResponse, error) {
 	if err := s.dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
-		return tx.CreateTxobForCode(ctx, request.CodeId)
+		return tx.CreateTxobForCode(ctx, request)
 	}); err != nil {
 		return nil, err
 	}

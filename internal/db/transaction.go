@@ -17,7 +17,7 @@ type Transaction interface {
 	MarkAsUsed(ctx context.Context, code string) error
 	MarkAllAsStale(ctx context.Context, accountID string) error
 
-	CreateTxobForCode(ctx context.Context, codeID string) error
+	CreateTxobForCode(ctx context.Context, in passwordV1.DeliverCodeRequest) error
 
 	GetCurrentPasswordForAccountID(ctx context.Context, accountID string) (*passwordV1.Password, error)
 	CreatePassword(ctx context.Context, p passwordV1.Password) error
@@ -97,16 +97,16 @@ UPDATE password_reset_code
 	return err
 }
 
-func (tx *txImpl) CreateTxobForCode(ctx context.Context, codeID string) error {
+func (tx *txImpl) CreateTxobForCode(ctx context.Context, in passwordV1.DeliverCodeRequest) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
 	query := `
-INSERT INTO password_reset_code_txob(code_id, sent) 
- VALUES($1, FALSE)
+INSERT INTO password_reset_code_txob(code_id, sent, email_address_id, phone_number_id) 
+ VALUES($1, FALSE, $2, $3)
 `
 
-	_, err := q.ExecContext(ctx, query, codeID)
+	_, err := q.ExecContext(ctx, query, in.CodeId, in.GetEmailAddressId(), in.GetPhoneNumberId())
 
 	return err
 }
