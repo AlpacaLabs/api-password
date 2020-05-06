@@ -25,9 +25,9 @@ func NewServer(config configuration.Config, service service.Service) Server {
 func (s Server) Run() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/password-reset", s.SendCodeOptions).Methods(http.MethodPost)
-	r.HandleFunc("/password-reset/{code:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}}", s.VerifyCode).Methods(http.MethodGet)
-	r.HandleFunc("/password-reset", s.ResetPassword).Methods(http.MethodPut)
+	//r.HandleFunc("/password-reset", s.SendCodeOptions).Methods(http.MethodPost)
+	//r.HandleFunc("/password-reset/{code:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}}", s.VerifyCode).Methods(http.MethodGet)
+	//r.HandleFunc("/password-reset", s.ResetPassword).Methods(http.MethodPut)
 
 	addr := fmt.Sprintf(":%d", s.config.HTTPPort)
 	log.Infof("Listening for HTTP on %s...\n", addr)

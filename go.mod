@@ -6,18 +6,15 @@ require (
 	github.com/AlpacaLabs/go-timestamp v0.0.0-20200502002453-181df3ead2e7
 	github.com/AlpacaLabs/go-timestamp-sql v0.0.0-20200506000030-73a801105204
 	github.com/AlpacaLabs/protorepo-account-go v0.0.0-20200505194047-f20cfddb7495
-	github.com/AlpacaLabs/protorepo-auth-go v0.0.0-20200505173656-c2f6d3ebff29
 	github.com/AlpacaLabs/protorepo-pagination-go v0.0.0-20200503181518-cbf4b2f30657 // indirect
-	github.com/AlpacaLabs/protorepo-password-go v0.0.0-20200505133112-2c352c4f3af7
+	github.com/AlpacaLabs/protorepo-password-go v0.0.0-20200506190830-9020c4a86616
 	github.com/badoux/checkmail v0.0.0-20180430153108-0755fe2dc241
 	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc // indirect
 	github.com/golang-sql/sqlexp v0.0.0-20170517235910-f1bb20e5a188
-	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v0.0.0-20171129191014-dec09d789f3d
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/guregu/null v4.0.0+incompatible
-	github.com/lib/pq v0.0.0-20180523175426-90697d60dd84
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.5.0
 	github.com/smartystreets/goconvey v1.6.4

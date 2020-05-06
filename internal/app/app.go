@@ -3,11 +3,13 @@ package app
 import (
 	"sync"
 
+	"google.golang.org/grpc"
+
 	"github.com/AlpacaLabs/api-password/internal/configuration"
 	"github.com/AlpacaLabs/api-password/internal/db"
 	"github.com/AlpacaLabs/api-password/internal/http"
 	"github.com/AlpacaLabs/api-password/internal/service"
-	_ "github.com/lib/pq"
+	"github.com/sirupsen/logrus"
 )
 
 type App struct {
@@ -23,7 +25,11 @@ func NewApp(c configuration.Config) App {
 func (a App) Run() {
 	dbConn := db.Connect(a.config.DBUser, a.config.DBPass, a.config.DBHost, a.config.DBName)
 	dbClient := db.NewClient(dbConn)
-	svc := service.NewService(a.config, dbClient)
+	accountConn, err := grpc.Dial(a.config.AccountGRPCAddress)
+	if err != nil {
+		logrus.Fatalf("failed to dial account service: %v", err)
+	}
+	svc := service.NewService(a.config, dbClient, accountConn)
 
 	var wg sync.WaitGroup
 

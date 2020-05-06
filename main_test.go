@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
+	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
+
 	clock "github.com/AlpacaLabs/go-timestamp"
-	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
 	"github.com/google/uuid"
 	"github.com/rs/xid"
 
@@ -34,7 +35,7 @@ func Test_CreatePasswordResetCode(t *testing.T) {
 
 		dbClient := db.NewClient(dbConn)
 		err := dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
-			return tx.CreatePasswordResetCode(ctx, authV1.PasswordResetCode{
+			return tx.CreatePasswordResetCode(ctx, passwordV1.PasswordResetCode{
 				Code:      uuid.New().String(),
 				ExpiresAt: clock.TimeToTimestamp(time.Now().Add(time.Minute * 5)),
 				AccountId: xid.New().String(),

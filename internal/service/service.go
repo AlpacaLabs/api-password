@@ -7,14 +7,15 @@ import (
 )
 
 type Service struct {
-	config   configuration.Config
-	dbClient db.Client
-	authConn *grpc.ClientConn
+	config      configuration.Config
+	dbClient    db.Client
+	accountConn *grpc.ClientConn
 }
 
-func NewService(config configuration.Config, dbClient db.Client) Service {
+func NewService(config configuration.Config, dbClient db.Client, accountConn *grpc.ClientConn) Service {
 	return Service{
-		config:   config,
-		dbClient: dbClient,
+		config:      config,
+		dbClient:    dbClient,
+		accountConn: accountConn,
 	}
 }

@@ -7,16 +7,17 @@ import (
 
 	"github.com/AlpacaLabs/api-password/internal/db/entities"
 
-	authV1 "github.com/AlpacaLabs/protorepo-auth-go/alpacalabs/auth/v1"
 	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
 	"github.com/golang-sql/sqlexp"
 )
 
 type Transaction interface {
-	CreatePasswordResetCode(ctx context.Context, in authV1.PasswordResetCode) error
-	CodeIsValid(ctx context.Context, code string) (bool, error)
+	CreatePasswordResetCode(ctx context.Context, in passwordV1.PasswordResetCode) error
+	GetCodeByCodeAndAccountID(ctx context.Context, code, accountID string) (*passwordV1.PasswordResetCode, error)
 	MarkAsUsed(ctx context.Context, code string) error
 	MarkAllAsStale(ctx context.Context, accountID string) error
+
+	CreateTxobForCode(ctx context.Context, codeID string) error
 
 	GetPasswordForAccountID(ctx context.Context, id string) (*passwordV1.Password, error)
 	CreatePassword(ctx context.Context, p passwordV1.Password) error
@@ -27,44 +28,45 @@ type txImpl struct {
 	tx *sql.Tx
 }
 
-func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, in authV1.PasswordResetCode) error {
+func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, in passwordV1.PasswordResetCode) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
 	c := entities.NewPasswordResetCodeFromPB(in)
 
 	query := `
-INSERT INTO password_reset_code(code, expiration_timestamp, stale, used, account_id) 
+INSERT INTO password_reset_code(id, code, creation_timestamp, expiration_timestamp, stale, used, account_id) 
  VALUES($1, $2, $3, $4, $5)
 `
 
-	_, err := q.ExecContext(ctx, query, c.Code, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
+	_, err := q.ExecContext(ctx, query, c.ID, c.Code, c.CreatedAt, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
 
 	return err
 }
 
-func (tx *txImpl) CodeIsValid(ctx context.Context, code string) (bool, error) {
+func (tx *txImpl) GetCodeByCodeAndAccountID(ctx context.Context, code, accountID string) (*passwordV1.PasswordResetCode, error) {
 	var q sqlexp.Querier
 	q = tx.tx
 
 	query := `
-SELECT COUNT(*) AS count 
+SELECT id, code, creation_timestamp, expiration_timestamp, stale, used, account_id
  FROM password_reset_code
  WHERE code = $1
+ AND account_id = $2
  AND stale = FALSE
  AND used = FALSE
- AND expiration_timestamp > $2
+ AND expiration_timestamp > $3
 `
 
-	var count int
-	row := q.QueryRowContext(ctx, query, code, time.Now())
+	var c entities.PasswordResetCode
+	row := q.QueryRowContext(ctx, query, code, accountID, time.Now())
 
-	err := row.Scan(&count)
+	err := row.Scan(&c.ID, &c.Code, &c.CreatedAt, &c.ExpiresAt, &c.Stale, &c.Used, &c.AccountID)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return count > 1, nil
+	return c.ToProtobuf(), nil
 }
 
 func (tx *txImpl) MarkAsUsed(ctx context.Context, code string) error {
@@ -92,6 +94,20 @@ UPDATE password_reset_code
 `
 
 	_, err := q.ExecContext(ctx, query, accountID)
+	return err
+}
+
+func (tx *txImpl) CreateTxobForCode(ctx context.Context, codeID string) error {
+	var q sqlexp.Querier
+	q = tx.tx
+
+	query := `
+INSERT INTO password_reset_code_txob(code_id, sent) 
+ VALUES($1, FALSE)
+`
+
+	_, err := q.ExecContext(ctx, query, codeID)
+
 	return err
 }
 

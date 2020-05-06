@@ -3,38 +3,74 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
+	"time"
+
+	clock "github.com/AlpacaLabs/go-timestamp"
+	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
+	"github.com/rs/xid"
 
 	"github.com/AlpacaLabs/api-password/internal/db"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 )
 
-func (s *Service) VerifyCode(ctx context.Context, codeString string) (bool, error) {
+var (
+	ErrEmptyPassword = errors.New("password cannot be empty")
+)
 
-	log.Debugf("Verifying password reset code: %s", codeString)
-
-	// Validate the password reset code is a UUID
-	if _, err := uuid.Parse(codeString); err != nil {
-		return false, err
-	}
-
-	var validCode bool
-
+func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeRequest) error {
 	err := s.dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
-		b, err := tx.CodeIsValid(ctx, codeString)
+		if strings.TrimSpace(request.NewPassword) == "" {
+			return ErrEmptyPassword
+		}
+
+		code := request.Code
+		accountID := request.AccountId
+		if _, err := uuid.Parse(request.Code); err != nil {
+			return err
+		}
+
+		// Verify a code exists for the given code and account ID
+		if _, err := tx.GetCodeByCodeAndAccountID(ctx, code, accountID); err != nil {
+			return err
+		}
+
+		salt, err := generateSalt(32)
 		if err != nil {
 			return err
 		}
-		validCode = b
+		iterationCount := 10000
+		hash := generateHash(request.NewPassword, iterationCount, salt)
+
+		newPasswordID := xid.New().String()
+		if err := tx.CreatePassword(ctx, passwordV1.Password{
+			Id:             newPasswordID,
+			CreatedAt:      clock.TimeToTimestamp(time.Now()),
+			IterationCount: int32(iterationCount),
+			Salt:           salt,
+			Hash:           hash,
+			AccountId:      accountID,
+		}); err != nil {
+			return err
+		}
+
+		if err := tx.UpdateCurrentPassword(ctx, accountID, newPasswordID); err != nil {
+			return err
+		}
+
+		if err := tx.MarkAsUsed(ctx, code); err != nil {
+			return err
+		}
+
+		if err := tx.MarkAllAsStale(ctx, accountID); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	if !validCode {
-		return false, errors.New("reset code not valid")
-	}
-
-	return true, nil
+	return nil
 }
