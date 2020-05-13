@@ -31,7 +31,8 @@ func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeR
 		}
 
 		// Verify a code exists for the given code and account ID
-		if _, err := tx.GetCodeByCodeAndAccountID(ctx, code, accountID); err != nil {
+		codeEntity, err := tx.GetCodeByCodeAndAccountID(ctx, code, accountID)
+		if err != nil {
 			return err
 		}
 
@@ -58,7 +59,7 @@ func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeR
 			return err
 		}
 
-		if err := tx.MarkAsUsed(ctx, code); err != nil {
+		if err := tx.MarkAsUsed(ctx, codeEntity.Id); err != nil {
 			return err
 		}
 

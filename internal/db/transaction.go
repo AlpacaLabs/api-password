@@ -14,7 +14,7 @@ import (
 type Transaction interface {
 	CreatePasswordResetCode(ctx context.Context, in passwordV1.PasswordResetCode) error
 	GetCodeByCodeAndAccountID(ctx context.Context, code, accountID string) (*passwordV1.PasswordResetCode, error)
-	MarkAsUsed(ctx context.Context, code string) error
+	MarkAsUsed(ctx context.Context, codeID string) error
 	MarkAllAsStale(ctx context.Context, accountID string) error
 
 	CreateTxobForCode(ctx context.Context, in passwordV1.DeliverCodeRequest) error
@@ -69,17 +69,17 @@ SELECT id, code, creation_timestamp, expiration_timestamp, stale, used, account_
 	return c.ToProtobuf(), nil
 }
 
-func (tx *txImpl) MarkAsUsed(ctx context.Context, code string) error {
+func (tx *txImpl) MarkAsUsed(ctx context.Context, codeID string) error {
 	var q sqlexp.Querier
 	q = tx.tx
 
 	query := `
 UPDATE password_reset_code 
  SET used=TRUE, stale=TRUE 
- WHERE code=$1
+ WHERE id=$1
 `
 
-	_, err := q.ExecContext(ctx, query, code)
+	_, err := q.ExecContext(ctx, query, codeID)
 	return err
 }
 

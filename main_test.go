@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
 
 	clock "github.com/AlpacaLabs/go-timestamp"
@@ -22,7 +24,11 @@ var dbConn *sql.DB
 
 func TestMain(m *testing.M) {
 	c := configuration.LoadConfig()
-	dbConn = db.Connect(c.DBUser, c.DBPass, c.DBHost, c.DBName)
+	if dbc, err := c.SQLConfig.Connect(); err != nil {
+		logrus.Fatalf("failed to dial account service: %v", err)
+	} else {
+		dbConn = dbc
+	}
 
 	code := m.Run()
 

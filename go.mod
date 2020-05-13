@@ -3,6 +3,7 @@ module github.com/AlpacaLabs/api-password
 go 1.14
 
 require (
+	github.com/AlpacaLabs/go-config v0.0.0-20200512232134-8004548d67af
 	github.com/AlpacaLabs/go-timestamp v0.0.0-20200502002453-181df3ead2e7
 	github.com/AlpacaLabs/go-timestamp-sql v0.0.0-20200506000030-73a801105204
 	github.com/AlpacaLabs/protorepo-account-go v0.0.0-20200505194047-f20cfddb7495
