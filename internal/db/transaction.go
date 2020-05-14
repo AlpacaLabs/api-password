@@ -28,7 +28,7 @@ type txImpl struct {
 	tx pgx.Tx
 }
 
-func (tx *txImpl) CreatePasswordResetCode(ctx context.Context, in passwordV1.PasswordResetCode) error {
+func (t *txImpl) CreatePasswordResetCode(ctx context.Context, in passwordV1.PasswordResetCode) error {
 	c := entities.NewPasswordResetCodeFromPB(in)
 
 	query := `
@@ -36,13 +36,13 @@ INSERT INTO password_reset_code(id, code, created_at, expires_at, stale, used, a
  VALUES($1, $2, $3, $4, $5, $6, $7)
 `
 
-	_, err := tx.tx.Exec(ctx, query,
+	_, err := t.tx.Exec(ctx, query,
 		c.ID, c.Code, c.CreatedAt, c.ExpiresAt, c.Stale, c.Used, c.AccountID)
 
 	return err
 }
 
-func (tx *txImpl) GetCodeByCodeAndAccountID(ctx context.Context, code, accountID string) (*passwordV1.PasswordResetCode, error) {
+func (t *txImpl) GetCodeByCodeAndAccountID(ctx context.Context, code, accountID string) (*passwordV1.PasswordResetCode, error) {
 	query := `
 SELECT id, code, created_at, expires_at, stale, used, account_id
  FROM password_reset_code
@@ -54,7 +54,7 @@ SELECT id, code, created_at, expires_at, stale, used, account_id
 `
 
 	var c entities.PasswordResetCode
-	row := tx.tx.QueryRow(ctx, query, code, accountID, time.Now())
+	row := t.tx.QueryRow(ctx, query, code, accountID, time.Now())
 
 	err := row.Scan(&c.ID, &c.Code, &c.CreatedAt, &c.ExpiresAt, &c.Stale, &c.Used, &c.AccountID)
 	if err != nil {
@@ -64,40 +64,40 @@ SELECT id, code, created_at, expires_at, stale, used, account_id
 	return c.ToProtobuf(), nil
 }
 
-func (tx *txImpl) MarkAsUsed(ctx context.Context, codeID string) error {
+func (t *txImpl) MarkAsUsed(ctx context.Context, codeID string) error {
 	query := `
 UPDATE password_reset_code 
  SET used=TRUE, stale=TRUE 
  WHERE id=$1
 `
 
-	_, err := tx.tx.Exec(ctx, query, codeID)
+	_, err := t.tx.Exec(ctx, query, codeID)
 	return err
 }
 
-func (tx *txImpl) MarkAllAsStale(ctx context.Context, accountID string) error {
+func (t *txImpl) MarkAllAsStale(ctx context.Context, accountID string) error {
 	query := `
 UPDATE password_reset_code 
  SET stale=TRUE 
  WHERE account_id=$1
 `
 
-	_, err := tx.tx.Exec(ctx, query, accountID)
+	_, err := t.tx.Exec(ctx, query, accountID)
 	return err
 }
 
-func (tx *txImpl) CreateTxobForCode(ctx context.Context, in passwordV1.DeliverCodeRequest) error {
+func (t *txImpl) CreateTxobForCode(ctx context.Context, in passwordV1.DeliverCodeRequest) error {
 	query := `
 INSERT INTO password_reset_code_txob(code_id, sent, email_address_id, phone_number_id) 
  VALUES($1, FALSE, $2, $3)
 `
 
-	_, err := tx.tx.Exec(ctx, query, in.CodeId, in.GetEmailAddressId(), in.GetPhoneNumberId())
+	_, err := t.tx.Exec(ctx, query, in.CodeId, in.GetEmailAddressId(), in.GetPhoneNumberId())
 
 	return err
 }
 
-func (tx *txImpl) GetCurrentPasswordForAccountID(ctx context.Context, accountID string) (*passwordV1.Password, error) {
+func (t *txImpl) GetCurrentPasswordForAccountID(ctx context.Context, accountID string) (*passwordV1.Password, error) {
 	query := `
 SELECT p.id, p.created_at, p.iteration_count, p.salt, p.password_hash, p.account_id
  FROM password p
@@ -107,7 +107,7 @@ SELECT p.id, p.created_at, p.iteration_count, p.salt, p.password_hash, p.account
 `
 
 	var p entities.Password
-	row := tx.tx.QueryRow(ctx, query, accountID)
+	row := t.tx.QueryRow(ctx, query, accountID)
 	err := row.Scan(&p.ID, &p.CreatedAt, &p.IterationCount, &p.Salt, &p.Hash, &p.AccountID)
 
 	if err != nil {
@@ -117,7 +117,7 @@ SELECT p.id, p.created_at, p.iteration_count, p.salt, p.password_hash, p.account
 	return p.ToProtobuf(), nil
 }
 
-func (tx *txImpl) CreatePassword(ctx context.Context, in passwordV1.Password) error {
+func (t *txImpl) CreatePassword(ctx context.Context, in passwordV1.Password) error {
 	query := `
 INSERT INTO password(id, created_at, iteration_count, salt, password_hash, account_id) 
  VALUES($1, $2, $3, $4, $5, $6)
@@ -125,19 +125,19 @@ INSERT INTO password(id, created_at, iteration_count, salt, password_hash, accou
 
 	p := entities.NewPasswordFromProtobuf(in)
 
-	_, err := tx.tx.Exec(ctx, query, p.ID, p.CreatedAt, p.IterationCount, p.Salt, p.Hash, p.AccountID)
+	_, err := t.tx.Exec(ctx, query, p.ID, p.CreatedAt, p.IterationCount, p.Salt, p.Hash, p.AccountID)
 
 	return err
 }
 
-func (tx *txImpl) UpdateCurrentPassword(ctx context.Context, accountID, passwordID string) error {
+func (t *txImpl) UpdateCurrentPassword(ctx context.Context, accountID, passwordID string) error {
 	query := `
 UPDATE account 
  SET current_password_id=$1, 
  WHERE id=$2
 `
 
-	_, err := tx.tx.Exec(ctx, query, passwordID, accountID)
+	_, err := t.tx.Exec(ctx, query, passwordID, accountID)
 
 	return err
 }
