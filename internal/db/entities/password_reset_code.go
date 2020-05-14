@@ -4,10 +4,8 @@ import (
 	"time"
 
 	clock "github.com/AlpacaLabs/go-timestamp"
-	clocksql "github.com/AlpacaLabs/go-timestamp-sql"
 	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
 	"github.com/google/uuid"
-	"github.com/guregu/null"
 	"github.com/rs/xid"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,8 +15,8 @@ type PasswordResetCode struct {
 	Code      string
 	Used      bool
 	Stale     bool
-	CreatedAt null.Time
-	ExpiresAt null.Time
+	CreatedAt time.Time
+	ExpiresAt time.Time
 	AccountID string
 }
 
@@ -49,8 +47,8 @@ func NewPasswordResetCodeFromPB(c passwordV1.PasswordResetCode) PasswordResetCod
 		Code:      c.Code,
 		Used:      c.Used,
 		Stale:     c.Stale,
-		CreatedAt: clocksql.TimestampToNullTime(c.CreatedAt),
-		ExpiresAt: clocksql.TimestampToNullTime(c.ExpiresAt),
+		CreatedAt: clock.TimestampToTime(c.CreatedAt),
+		ExpiresAt: clock.TimestampToTime(c.ExpiresAt),
 		AccountID: c.AccountId,
 	}
 }
@@ -61,8 +59,8 @@ func (c PasswordResetCode) ToProtobuf() *passwordV1.PasswordResetCode {
 		Code:      c.Code,
 		Used:      c.Used,
 		Stale:     c.Stale,
-		CreatedAt: clocksql.TimestampFromNullTime(c.CreatedAt),
-		ExpiresAt: clocksql.TimestampFromNullTime(c.ExpiresAt),
+		CreatedAt: clock.TimeToTimestamp(c.CreatedAt),
+		ExpiresAt: clock.TimeToTimestamp(c.ExpiresAt),
 		AccountId: c.AccountID,
 	}
 }

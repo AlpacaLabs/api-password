@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/AlpacaLabs/api-password/internal/db/entities"
+
+	"github.com/jackc/pgx/v4"
+
 	"github.com/sirupsen/logrus"
 
-	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
-
-	clock "github.com/AlpacaLabs/go-timestamp"
-	"github.com/google/uuid"
 	"github.com/rs/xid"
 
 	"github.com/AlpacaLabs/api-password/internal/configuration"
@@ -20,11 +19,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var dbConn *sql.DB
+var dbConn *pgx.Conn
 
 func TestMain(m *testing.M) {
 	c := configuration.LoadConfig()
-	if dbc, err := c.SQLConfig.Connect(); err != nil {
+	logrus.Infof("Loaded config: %s", c)
+
+	if dbc, err := db.Connect(c.SQLConfig); err != nil {
 		logrus.Fatalf("failed to dial account service: %v", err)
 	} else {
 		dbConn = dbc
@@ -41,11 +42,13 @@ func Test_CreatePasswordResetCode(t *testing.T) {
 
 		dbClient := db.NewClient(dbConn)
 		err := dbClient.RunInTransaction(ctx, func(ctx context.Context, tx db.Transaction) error {
-			return tx.CreatePasswordResetCode(ctx, passwordV1.PasswordResetCode{
-				Code:      uuid.New().String(),
-				ExpiresAt: clock.TimeToTimestamp(time.Now().Add(time.Minute * 5)),
-				AccountId: xid.New().String(),
-			})
+
+			resetCode, err := entities.NewPasswordResetCode(xid.New().String(), time.Minute*30)
+			if err != nil {
+				return err
+			}
+
+			return tx.CreatePasswordResetCode(ctx, resetCode)
 		})
 		So(err, ShouldBeNil)
 	})

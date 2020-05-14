@@ -23,7 +23,7 @@ func NewApp(c configuration.Config) App {
 }
 
 func (a App) Run() {
-	dbConn, err := a.config.SQLConfig.Connect()
+	dbConn, err := db.Connect(a.config.SQLConfig)
 	if err != nil {
 		logrus.Fatalf("failed to dial account service: %v", err)
 	}

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/rs/xid"
+
 	configuration "github.com/AlpacaLabs/go-config"
 
-	"github.com/google/uuid"
 	flag "github.com/spf13/pflag"
 
 	log "github.com/sirupsen/logrus"
@@ -56,7 +57,7 @@ func (c Config) String() string {
 func LoadConfig() Config {
 	c := Config{
 		AppName:    "api-password",
-		AppID:      uuid.New().String(),
+		AppID:      xid.New().String(),
 		GrpcPort:   8081,
 		HealthPort: 8082,
 		HTTPPort:   8083,
