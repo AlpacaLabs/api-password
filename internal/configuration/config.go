@@ -16,7 +16,6 @@ import (
 
 const (
 	flagForGrpcPort       = "grpc_port"
-	flagForGrpcPortHealth = "grpc_port_health"
 	flagForHTTPPort       = "http_port"
 
 	flagForAccountGrpcAddress = "account_service_address"
@@ -37,13 +36,11 @@ type Config struct {
 	// HTTPPort controls what port our HTTP server runs on.
 	HTTPPort int
 
-	// HealthPort controls what port our gRPC health endpoints run on.
-	HealthPort int
-
 	// AccountGRPCAddress is the gRPC address of the Account service.
 	AccountGRPCAddress string
 
-	SQLConfig configuration.SQLConfig
+	// SQLConfig provides configuration for connecting to a SQL database.
+	SQLConfig   configuration.SQLConfig
 }
 
 func (c Config) String() string {
@@ -59,15 +56,13 @@ func LoadConfig() Config {
 		AppName:    "api-password",
 		AppID:      xid.New().String(),
 		GrpcPort:   8081,
-		HealthPort: 8082,
 		HTTPPort:   8083,
 	}
 
 	c.SQLConfig = configuration.LoadSQLConfig()
 
 	flag.Int(flagForGrpcPort, c.GrpcPort, "gRPC port")
-	flag.Int(flagForGrpcPortHealth, c.HealthPort, "gRPC health port")
-	flag.Int(flagForHTTPPort, c.HTTPPort, "gRPC HTTP port")
+	flag.Int(flagForHTTPPort, c.HTTPPort, "HTTP port")
 
 	flag.String(flagForAccountGrpcAddress, "", "Address of Account gRPC service")
 	flag.String(flagForAccountGrpcHost, "", "Host of Account gRPC service")
@@ -76,7 +71,6 @@ func LoadConfig() Config {
 	flag.Parse()
 
 	viper.BindPFlag(flagForGrpcPort, flag.Lookup(flagForGrpcPort))
-	viper.BindPFlag(flagForGrpcPortHealth, flag.Lookup(flagForGrpcPortHealth))
 	viper.BindPFlag(flagForHTTPPort, flag.Lookup(flagForHTTPPort))
 
 	viper.BindPFlag(flagForAccountGrpcAddress, flag.Lookup(flagForAccountGrpcAddress))
@@ -86,7 +80,6 @@ func LoadConfig() Config {
 	viper.AutomaticEnv()
 
 	c.GrpcPort = viper.GetInt(flagForGrpcPort)
-	c.HealthPort = viper.GetInt(flagForGrpcPortHealth)
 	c.HTTPPort = viper.GetInt(flagForHTTPPort)
 
 	c.AccountGRPCAddress = getGrpcAddress(flagForAccountGrpcAddress, flagForAccountGrpcHost, flagForAccountGrpcPort)
