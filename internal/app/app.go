@@ -39,7 +39,7 @@ func (a App) Run() {
 
 	wg.Add(1)
 	httpServer := http.NewServer(a.config, svc)
-	httpServer.Run()
+	go httpServer.Run()
 
 	wg.Wait()
 }
