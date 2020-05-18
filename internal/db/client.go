@@ -27,9 +27,7 @@ func (c *clientImpl) RunInTransaction(ctx context.Context, fn func(context.Conte
 	}
 
 	// Run function
-	err = fn(ctx, &txImpl{
-		tx: tx,
-	})
+	err = fn(ctx, newTransaction(tx))
 	if err != nil {
 		// TODO check err
 		tx.Rollback(ctx)

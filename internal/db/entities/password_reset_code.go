@@ -20,8 +20,8 @@ type PasswordResetCode struct {
 	AccountID string
 }
 
-func NewPasswordResetCode(accountID string, longevity time.Duration) (passwordV1.PasswordResetCode, error) {
-	var empty passwordV1.PasswordResetCode
+func NewPasswordResetCode(accountID string, longevity time.Duration) (PasswordResetCode, error) {
+	var empty PasswordResetCode
 	var code string
 	if u, err := uuid.NewRandom(); err != nil {
 		return empty, err
@@ -32,12 +32,12 @@ func NewPasswordResetCode(accountID string, longevity time.Duration) (passwordV1
 
 	now := time.Now()
 
-	return passwordV1.PasswordResetCode{
-		Id:        xid.New().String(),
-		AccountId: accountID,
+	return PasswordResetCode{
+		ID:        xid.New().String(),
+		AccountID: accountID,
 		Code:      code,
-		CreatedAt: clock.TimeToTimestamp(now),
-		ExpiresAt: clock.TimeToTimestamp(now.Add(longevity)),
+		CreatedAt: now,
+		ExpiresAt: now.Add(longevity),
 	}, nil
 }
 
@@ -51,6 +51,10 @@ func NewPasswordResetCodeFromPB(c passwordV1.PasswordResetCode) PasswordResetCod
 		ExpiresAt: clock.TimestampToTime(c.ExpiresAt),
 		AccountID: c.AccountId,
 	}
+}
+
+func (c PasswordResetCode) IsExpired() bool {
+	return time.Now().After(c.ExpiresAt)
 }
 
 func (c PasswordResetCode) ToProtobuf() *passwordV1.PasswordResetCode {

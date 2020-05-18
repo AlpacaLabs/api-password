@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	flagForGrpcPort       = "grpc_port"
-	flagForHTTPPort       = "http_port"
+	flagForGrpcPort = "grpc_port"
+	flagForHTTPPort = "http_port"
 
 	flagForAccountGrpcAddress = "account_service_address"
 	flagForAccountGrpcHost    = "account_service_host"
@@ -40,7 +40,7 @@ type Config struct {
 	AccountGRPCAddress string
 
 	// SQLConfig provides configuration for connecting to a SQL database.
-	SQLConfig   configuration.SQLConfig
+	SQLConfig configuration.SQLConfig
 }
 
 func (c Config) String() string {
@@ -53,10 +53,10 @@ func (c Config) String() string {
 
 func LoadConfig() Config {
 	c := Config{
-		AppName:    "api-password",
-		AppID:      xid.New().String(),
-		GrpcPort:   8081,
-		HTTPPort:   8083,
+		AppName:  "api-password",
+		AppID:    xid.New().String(),
+		GrpcPort: 8081,
+		HTTPPort: 8083,
 	}
 
 	c.SQLConfig = configuration.LoadSQLConfig()
