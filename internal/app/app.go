@@ -23,16 +23,20 @@ func NewApp(c configuration.Config) App {
 }
 
 func (a App) Run() {
+	// Connect to the database
 	dbConn, err := db.Connect(a.config.SQLConfig)
 	if err != nil {
 		logrus.Fatalf("failed to dial account service: %v", err)
 	}
 	dbClient := db.NewClient(dbConn)
 
+	// Connect to the Account service
 	accountConn, err := grpc.Dial(a.config.AccountGRPCAddress)
 	if err != nil {
 		logrus.Fatalf("failed to dial account service: %v", err)
 	}
+
+	// Create our service layer
 	svc := service.NewService(a.config, dbClient, accountConn)
 
 	var wg sync.WaitGroup

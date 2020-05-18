@@ -6,7 +6,8 @@ import (
 	"strings"
 	"time"
 
-	clock "github.com/AlpacaLabs/go-timestamp"
+	"github.com/AlpacaLabs/api-password/internal/db/entities"
+
 	passwordV1 "github.com/AlpacaLabs/protorepo-password-go/alpacalabs/password/v1"
 	"github.com/rs/xid"
 
@@ -36,21 +37,20 @@ func (s *Service) VerifyCode(ctx context.Context, request passwordV1.VerifyCodeR
 			return err
 		}
 
-		salt, err := generateSalt(32)
+		salt, err := generateSalt(s.argonConfiguration.SaltLength)
 		if err != nil {
 			return err
 		}
-		iterationCount := 10000
-		hash := generateHash(request.NewPassword, iterationCount, salt)
+		hash := generateHash(request.NewPassword, salt, s.argonConfiguration)
 
 		newPasswordID := xid.New().String()
-		if err := tx.CreatePassword(ctx, passwordV1.Password{
-			Id:             newPasswordID,
-			CreatedAt:      clock.TimeToTimestamp(time.Now()),
-			IterationCount: int32(iterationCount),
-			Salt:           salt,
-			Hash:           hash,
-			AccountId:      accountID,
+		if err := tx.CreatePassword(ctx, entities.Password{
+			ID:                 newPasswordID,
+			CreatedAt:          time.Now(),
+			Salt:               salt,
+			Hash:               hash,
+			AccountID:          accountID,
+			ArgonConfiguration: s.argonConfiguration,
 		}); err != nil {
 			return err
 		}

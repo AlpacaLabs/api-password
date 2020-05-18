@@ -6,7 +6,6 @@ require (
 	github.com/AlpacaLabs/go-config v0.0.0-20200513234536-ba3727e0638a
 	github.com/AlpacaLabs/go-kontext v0.0.0-20200518020453-f209c8f366fc
 	github.com/AlpacaLabs/go-timestamp v0.0.0-20200502002453-181df3ead2e7
-	github.com/AlpacaLabs/go-timestamp-sql v0.0.0-20200506000030-73a801105204
 	github.com/AlpacaLabs/protorepo-account-go v0.0.0-20200505194047-f20cfddb7495
 	github.com/AlpacaLabs/protorepo-event-go v0.0.0-20200517012157-817122666c68
 	github.com/AlpacaLabs/protorepo-pagination-go v0.0.0-20200503181518-cbf4b2f30657 // indirect
@@ -15,7 +14,6 @@ require (
 	github.com/google/uuid v0.0.0-20171129191014-dec09d789f3d
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2
-	github.com/guregu/null v4.0.0+incompatible
 	github.com/jackc/pgx/v4 v4.6.0
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.5.0
