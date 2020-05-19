@@ -18,9 +18,9 @@ const (
 	flagForGrpcPort = "grpc_port"
 	flagForHTTPPort = "http_port"
 
-	flagForAccountGrpcAddress = "account_service_address"
-	flagForAccountGrpcHost    = "account_service_host"
-	flagForAccountGrpcPort    = "account_service_port_grpc"
+	flagForAccountGrpcAddress = "api_account_service_address"
+	flagForAccountGrpcHost    = "api_account_service_host"
+	flagForAccountGrpcPort    = "api_account_service_port_grpc"
 )
 
 type Config struct {
