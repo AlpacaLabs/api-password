@@ -30,6 +30,12 @@ type Config struct {
 	// AppID is a unique identifier for the instance (pod) running this app.
 	AppID string
 
+	// KafkaConfig provides configuration for connecting to Apache Kafka.
+	KafkaConfig configuration.KafkaConfig
+
+	// SQLConfig provides configuration for connecting to a SQL database.
+	SQLConfig configuration.SQLConfig
+
 	// GrpcPort controls what port our gRPC server runs on.
 	GrpcPort int
 
@@ -38,9 +44,6 @@ type Config struct {
 
 	// AccountGRPCAddress is the gRPC address of the Account service.
 	AccountGRPCAddress string
-
-	// SQLConfig provides configuration for connecting to a SQL database.
-	SQLConfig configuration.SQLConfig
 }
 
 func (c Config) String() string {
@@ -59,6 +62,7 @@ func LoadConfig() Config {
 		HTTPPort: 8083,
 	}
 
+	c.KafkaConfig = configuration.LoadKafkaConfig()
 	c.SQLConfig = configuration.LoadSQLConfig()
 
 	flag.Int(flagForGrpcPort, c.GrpcPort, "gRPC port")

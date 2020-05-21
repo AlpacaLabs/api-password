@@ -7,5 +7,5 @@ import (
 )
 
 func (s Server) DeliverCode(ctx context.Context, request *passwordV1.DeliverCodeRequest) (*passwordV1.DeliverCodeResponse, error) {
-	return s.service.DeliverCode(ctx, *request)
+	return s.service.DeliverCode(ctx, request)
 }

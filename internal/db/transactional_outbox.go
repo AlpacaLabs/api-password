@@ -5,65 +5,70 @@ import (
 	"fmt"
 
 	"github.com/AlpacaLabs/api-password/internal/db/entities"
-
 	"github.com/jackc/pgx/v4"
 )
 
 const (
-	// TableForDeliverCodeRequest is the name of the transactional outbox (database table)
-	// from which we read "jobs" or "events" that need to get sent to a message broker,
-	TableForDeliverCodeRequest = "txob_deliver_code_request"
+	TableForSendEmailRequest = "txob_send_email_request"
+	TableForSendSmsRequest   = "txob_send_sms_request"
 )
 
 type TransactionalOutbox interface {
-	CreateDeliverCodeRequest(ctx context.Context, request entities.DeliverCodeRequest) error
-	ReadDeliverCodeRequest(ctx context.Context) (*entities.DeliverCodeRequest, error)
-	MarkAsSentDeliverCodeRequest(ctx context.Context, eventID string) error
+	ReadEvent(ctx context.Context, table string) (e *entities.Event, err error)
+	CreateEvent(ctx context.Context, e entities.Event, table string) error
+	MarkEventAsSent(ctx context.Context, eventID string, table string) error
 }
 
 type outboxImpl struct {
 	tx pgx.Tx
 }
 
-func (t *outboxImpl) CreateDeliverCodeRequest(ctx context.Context, in entities.DeliverCodeRequest) error {
+func (tx *outboxImpl) ReadEvent(ctx context.Context, table string) (*entities.Event, error) {
 	queryTemplate := `
-INSERT INTO %s(event_id, trace_id, sampled, sent, code_id, email_address_id) 
- VALUES($1, $2, $3, $4, $5, $6)
-`
-
-	query := fmt.Sprintf(queryTemplate, TableForDeliverCodeRequest)
-	_, err := t.tx.Exec(ctx, query, in.EventId, in.TraceId, in.Sampled, in.CodeId, false, in.GetEmailAddressId())
-
-	return err
-}
-
-func (t *outboxImpl) ReadDeliverCodeRequest(ctx context.Context) (*entities.DeliverCodeRequest, error) {
-	queryTemplate := `
-SELECT event_id, trace_id, sampled, sent, code_id, email_address_id
+SELECT
+  event_id, trace_id, sampled, sent, catalyst, payload
   FROM %s
   WHERE sent = FALSE
   LIMIT 1
 `
 
-	query := fmt.Sprintf(queryTemplate, TableForDeliverCodeRequest)
+	query := fmt.Sprintf(queryTemplate, table)
 
-	row := t.tx.QueryRow(ctx, query)
+	row := tx.tx.QueryRow(ctx, query)
 
-	var e entities.DeliverCodeRequest
-	if err := row.Scan(&e.EventId, &e.TraceId, &e.Sampled, &e.Sent, &e.CodeId, &e.EmailAddressId); err != nil {
-		return nil, err
+	e := &entities.Event{}
+
+	if err := row.Scan(&e.EventId, &e.TraceId, &e.Sampled, &e.Sent, &e.Catalyst, &e.Payload); err != nil {
+		return e, err
 	}
 
-	return &e, nil
+	return e, nil
 }
 
-func (t *outboxImpl) MarkAsSentDeliverCodeRequest(ctx context.Context, eventID string) error {
+func (tx *outboxImpl) CreateEvent(ctx context.Context, e entities.Event, table string) error {
+	queryTemplate := `
+INSERT INTO %s(
+  event_id, trace_id, sampled, sent, catalyst, payload
+) 
+VALUES($1, $2, $3, $4, $5, $6)
+`
+
+	query := fmt.Sprintf(queryTemplate, table)
+
+	if _, err := tx.tx.Exec(ctx, query, e.EventId, e.TraceId, e.Sampled, e.Sent, e.Catalyst, e.Payload); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (tx *outboxImpl) MarkEventAsSent(ctx context.Context, eventID string, table string) error {
 	queryTemplate := `
 UPDATE %s
   SET sent = TRUE
   WHERE event_id = $1
 `
-	query := fmt.Sprintf(queryTemplate, TableForDeliverCodeRequest)
-	_, err := t.tx.Exec(ctx, query, eventID)
+	query := fmt.Sprintf(queryTemplate, table)
+	_, err := tx.tx.Exec(ctx, query, eventID)
 	return err
 }
